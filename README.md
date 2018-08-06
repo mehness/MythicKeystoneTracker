@@ -21,3 +21,6 @@ Basic commands are:
 * /mkt - this brings up the UI
 * /mkt_iconshow - toggles the mini-map icon (default is enabled)
 * /mkt_clear - clears the database, useful if something goes wrong if you want to clear your data
+
+[Curse](https://wow.curseforge.com/projects/mythic-keystone-tracker)
+[WoWInterface](http://www.wowinterface.com/downloads/info24757-MythicKeystoneTracker.html)
