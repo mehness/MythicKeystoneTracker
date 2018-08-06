@@ -1,0 +1,13 @@
+## Interface: 80000
+## Title: MythicKeystoneTracker
+## Notes: Lets players track Mythic Keystones and Mythic Plus progress for all of their characters.
+## Author: Mehtaknight - Aggramar (US)
+## Contributor: Séji - Moon Guard (US)
+## SavedVariables: MythicKeystoneTrackerDB
+## OptionalDeps: Ace3
+## X-Embeds: Ace3
+## X-License: GPLv2 or later
+
+embeds.xml
+
+Core.lua
