@@ -115,7 +115,6 @@ function MythicKeystoneTracker:OnInitialize()
     -- Called when the addon is loaded
     self.db = LibStub("AceDB-3.0"):New("MythicKeystoneTrackerDB", defaults, true) --true indicates default sharing for all characters
     LibStub("AceConfig-3.0"):RegisterOptionsTable("MythicKeystoneTracker", options, {"MythicKeystoneTracker", "mkt"})
-    --self.optionsFrame = LibStub("AceConfigDialog-3.0"):AddToBlizOptions("MythicKeystoneTracker", "Mythic Keystone Tracker")
     self:RegisterChatCommand("mkt", "ChatCommand")
     self:RegisterChatCommand("MythicKeystoneTracker", "ChatCommand")
     self:RegisterChatCommand("mkt_clear", "ClearKeystones")
@@ -531,7 +530,7 @@ function MythicKeystoneTracker:FindCurrentKeystone()
         return nil
     end
 
-    if self:GetCharacterLevel() == 110 or self:GetCharacterLevel() == 120 then
+    if self:GetCharacterLevel() == 120 then
         for bag = 0, NUM_BAG_SLOTS do
             for slot = 1, GetContainerNumSlots(bag) do
                 if(GetContainerItemID(bag, slot) == itemID) then
@@ -737,15 +736,15 @@ function MythicKeystoneTracker:ClassifyAffixLevels(affixID)
     affLevel = {}
 
     for i = 1, 4 do
-        if affixID[i] == 5 or affixID[i] == 6 or affixID[i] == 7 or affixID[i] == 8 or affixID[i] == 11 then
+        if affixID[i] == 9 or affixID[i] == 10 then
             affLevel[1] = affixID[i]
         end
 
-        if affixID[i] == 2 or affixID[i] == 3 or affixID[i] == 4 or affixID[i] == 12 or affixID[i] == 13 or affixID[i] == 14 then
+        if affixID[i] == 5 or affixID[i] == 6 or affixID[i] == 7 or affixID[i] == 8 or affixID[i] == 11 then
             affLevel[2] = affixID[i]
         end
 
-        if affixID[i] == 9 or affixID[i] == 10 then
+        if affixID[i] == 2 or affixID[i] == 3 or affixID[i] == 4 or affixID[i] == 12 or affixID[i] == 13 or affixID[i] == 14 then
             affLevel[3] = affixID[i]
         end
 
