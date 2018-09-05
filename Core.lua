@@ -189,6 +189,8 @@ function MythicKeystoneTracker:UIBringUp()
     local affixAcquired = false
     local currKeyInfo = "No Key"
 
+    --print(self:FindCurrentKeystone())
+
     -- Create a container frame
     mktracker = AceGUI:Create("Window")
     
@@ -518,12 +520,11 @@ end
 -- find keystone in bag, store position, and place results into db
 function MythicKeystoneTracker:FindCurrentKeystone()
     local itemID = 138019
+    local BFAkey = 158923
     local exists = false
     local currChar = self:NameAndRealmAndFaction()
 
-
     affixIDs = self:GetAffixIds()
-    
 
     if not self.db.global.currKeystone then
         self.db.global.currKeystone = {}
@@ -532,8 +533,8 @@ function MythicKeystoneTracker:FindCurrentKeystone()
 
     if self:GetCharacterLevel() == 120 then
         for bag = 0, NUM_BAG_SLOTS do
-            for slot = 1, GetContainerNumSlots(bag) do
-                if(GetContainerItemID(bag, slot) == itemID) then
+            for slot = 0, GetContainerNumSlots(bag) do
+                if(GetContainerItemID(bag, slot) == itemID or GetContainerItemID(bag, slot) == BFAkey) then                    
                     bagID = bag
                     slotNum = slot
                     local itemLink = GetContainerItemLink(bag, slot)
@@ -545,6 +546,7 @@ function MythicKeystoneTracker:FindCurrentKeystone()
                     self:UpdateTable(self.ScrollTable)
                     exists = true
                     return itemLink
+                    
                 end
                 if not exists then
                     local itemLink = nil
@@ -556,8 +558,7 @@ function MythicKeystoneTracker:FindCurrentKeystone()
                 end
             end   
         end
-    end
-    
+    end    
 end
 
 -- extract meaningful data from the keystone itemlink
