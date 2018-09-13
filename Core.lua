@@ -36,7 +36,7 @@ local mktracker
 
 local blizzAffixIDs = {
     [1] = "inv_misc_volatilewater",
-    [2] = "spell_magic_lesserinvisibility",
+    [2] = "spell_magic_lesserinvisibilty",
     [3] = "spell_shaman_lavasurge",
     [4] = "spell_deathknight_necroticplague",
     [5] = "spell_nature_massteleport",
