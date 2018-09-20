@@ -166,6 +166,8 @@ end
 
 function MythicKeystoneTracker:PLAYER_ENTERING_WORLD()
     --self:UpdateTable(self.ScrollTable)
+    C_MythicPlus.RequestMapInfo()
+    C_MythicPlus.RequestRewards()
 end
 
 function MythicKeystoneTracker:MiniMapButton()
@@ -188,8 +190,6 @@ function MythicKeystoneTracker:UIBringUp()
     
     local affixAcquired = false
     local currKeyInfo = "No Key"
-
-    --print(self:FindCurrentKeystone())
 
     -- Create a container frame
     mktracker = AceGUI:Create("Window")
@@ -482,10 +482,8 @@ function MythicKeystoneTracker:UIBringUp()
         affixTwo:SetPoint('BOTTOMLEFT', mktracker.frame, 125, 75)
         affixThree:ClearAllPoints()
         affixThree:SetPoint('BOTTOMLEFT', mktracker.frame, 225, 75)
-        if affixIDs[4] then
-            seasonAffix:ClearAllPoints()
-            seasonAffix:SetPoint('BOTTOMLEFT', mktracker.frame, 325, 75)
-        end
+        seasonAffix:ClearAllPoints()
+        seasonAffix:SetPoint('BOTTOMLEFT', mktracker.frame, 325, 75)
         affixAcquired = false
     end
     
@@ -524,6 +522,7 @@ function MythicKeystoneTracker:FindCurrentKeystone()
     local exists = false
     local currChar = self:NameAndRealmAndFaction()
 
+    self:WeeklyBest()
     affixIDs = self:GetAffixIds()
 
     if not self.db.global.currKeystone then
@@ -541,7 +540,6 @@ function MythicKeystoneTracker:FindCurrentKeystone()
                     local info = self:ParseKey(itemLink)
 
                     self.db.global.currIlvl[currChar] = self:GetItemLevel()
-                    --self.db.global.weeklyBest[currChar] = self:WeeklyBest()
                     self.db.global.currKeystone[currChar] = {itemLink, info.dungeonName, info.level}
                     self:UpdateTable(self.ScrollTable)
                     exists = true
@@ -552,7 +550,6 @@ function MythicKeystoneTracker:FindCurrentKeystone()
                     local itemLink = nil
                     local info = self:ParseKey(itemLink)
                     self.db.global.currIlvl[currChar] = self:GetItemLevel()
-                    --self.db.global.weeklyBest[currChar] = self:WeeklyBest()
                     self.db.global.currKeystone[currChar] = {itemLink, dungeonName, level}
                     self:UpdateTable(self.ScrollTable)
                 end
@@ -584,28 +581,26 @@ end
 
 -- find the weekly best completed and store in the db
 function MythicKeystoneTracker:WeeklyBest() --compare query to stored value
-    local currChar = self:NameAndRealmAndFaction()
 	if not self.db.global.weeklyBest then
 		self.db.global.weeklyBest = {}
-	end
+    end
     
+    local currChar = self:NameAndRealmAndFaction()
     local best = 0
-   
-    C_MythicPlus.RequestMapInfo()
-    C_MythicPlus.RequestRewards()
 
     local mapTable = C_ChallengeMode.GetMapTable()
 
     for i, mapId in pairs(mapTable) do
         local _, weeklyBestLevel, _, _, _ = C_MythicPlus.GetWeeklyBestForMap(mapId)
-
+        
         if weeklyBestLevel and weeklyBestLevel > best then
             best = weeklyBestLevel
         end
     end
-        
-	self.db.global.weeklyBest[currChar] = best
-	return best
+
+    self.db.global.weeklyBest[currChar] = best
+    return best
+
 end
 
 -- key report out function
@@ -625,7 +620,6 @@ function MythicKeystoneTracker:ReportKeys(target)
             end
         end
     end
-
 end
 
 -- populate the table
@@ -725,10 +719,21 @@ function MythicKeystoneTracker:GetAffixData(affixID)
     else
         local affixData = {}
         local affixDesc = {}
-        for i = 1, 3 do
-            affixData[i], affixDesc[i] = C_ChallengeMode.GetAffixInfo(affixID[i])
+        
+        table.insert(affixID, 16) -- forces seasonal even with low key
+        
+        if not affixID[4] then
+            for i = 1, 3 do
+                affixData[i], affixDesc[i] = C_ChallengeMode.GetAffixInfo(affixID[i])
+            end
+            return affixData, affixDesc
+        
+        else 
+            for i = 1, 4 do
+                affixData[i], affixDesc[i] = C_ChallengeMode.GetAffixInfo(affixID[i])
+            end
+            return affixData, affixDesc
         end
-        return affixData, affixDesc
     end
 end
 
@@ -790,7 +795,7 @@ end
 -- refesh the data for the current character in the db
 function MythicKeystoneTracker:RefreshingTable()
     self:FindCurrentKeystone()
-    self:WeeklyBest()
+    --self:WeeklyBest()
     self:UpdateTable(self.TestTable)
 end
 
