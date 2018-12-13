@@ -127,6 +127,7 @@ function MythicKeystoneTracker:OnInitialize()
 end
 
 function MythicKeystoneTracker:OnEnable()
+    self:RegisterEvent("PLAYER_LOGIN")
     self:RegisterEvent("BAG_UPDATE")
     self:RegisterEvent("PLAYER_ENTERING_WORLD")
     self:RegisterEvent("UNIT_INVENTORY_CHANGED")
@@ -168,6 +169,12 @@ function MythicKeystoneTracker:PLAYER_ENTERING_WORLD()
     --self:UpdateTable(self.ScrollTable)
     C_MythicPlus.RequestMapInfo()
     C_MythicPlus.RequestRewards()
+end
+
+function MythicKeystoneTracker:PLAYER_LOGIN()
+    C_MythicPlus.RequestMapInfo()
+    C_MythicPlus.RequestRewards()
+    C_MythicPlus.RequestCurrentAffixes()
 end
 
 function MythicKeystoneTracker:MiniMapButton()
@@ -239,8 +246,12 @@ function MythicKeystoneTracker:UIBringUp()
 
     -- weekly affixes
     if affixIDs then
+        
         affixAcquired = true
+
+        affixIDs = self:GetAffixIds()
         affixIDs = self:ClassifyAffixLevels(affixIDs)
+
         affixInfo, affixDescs = self:GetAffixData(affixIDs)
 
         affixOne = AceGUI:Create('Icon')
@@ -585,6 +596,10 @@ function MythicKeystoneTracker:WeeklyBest() --compare query to stored value
 		self.db.global.weeklyBest = {}
     end
     
+    -- grab weekday and record for reset and date of weekly best in order to maintain continuity
+    -- print(date("%m/%d/%y %H:%M:%S"))
+    -- print(date("*t").wday)
+    
     local currChar = self:NameAndRealmAndFaction()
     local best = 0
 
@@ -712,6 +727,18 @@ function MythicKeystoneTracker:GetAffixIds()
     return C_MythicPlus.GetCurrentAffixes()
 end
 
+function MythicKeystoneTracker:GetUsefulID(affixID)
+    affixIDsExtracted = {}
+    for i = 1, 4 do
+        for key, value in pairs(affixID[i]) do
+            if key == "id" then
+                table.insert(affixIDsExtracted, value)
+            end
+        end
+    end
+    return affixIDsExtracted
+end
+
 -- extract names from affix tuple
 function MythicKeystoneTracker:GetAffixData(affixID)
     if not affixID then 
@@ -719,9 +746,7 @@ function MythicKeystoneTracker:GetAffixData(affixID)
     else
         local affixData = {}
         local affixDesc = {}
-        
-        table.insert(affixID, 16) -- forces seasonal even with low key
-        
+                
         if not affixID[4] then
             for i = 1, 3 do
                 affixData[i], affixDesc[i] = C_ChallengeMode.GetAffixInfo(affixID[i])
@@ -739,6 +764,7 @@ end
 
 -- reorder the affixes into +4, +7, +10 and seasonal
 function MythicKeystoneTracker:ClassifyAffixLevels(affixID)
+    affixID = self:GetUsefulID(affixID)
     affLevel = {}
 
     for i = 1, 4 do
@@ -880,4 +906,12 @@ end
 
 function MythicKeystoneTracker:GetWeeklyRewardAvailability()
     return C_MythicPlus.IsWeeklyRewardAvailable()
+end
+
+function MythicKeystoneTracker:TableEntryCount(table)
+    count = 0
+    for _ in pairs(table) do 
+        count = count + 1
+    end
+    print(count)
 end
