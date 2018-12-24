@@ -603,16 +603,7 @@ function MythicKeystoneTracker:WeeklyBest() --compare query to stored value
     local currChar = self:NameAndRealmAndFaction()
     local best = 0
 
-    local mapTable = C_ChallengeMode.GetMapTable()
-
-    for i, mapId in pairs(mapTable) do
-        local _, weeklyBestLevel, _, _, _ = C_MythicPlus.GetWeeklyBestForMap(mapId)
-        
-        if weeklyBestLevel and weeklyBestLevel > best then
-            best = weeklyBestLevel
-        end
-    end
-
+    local best, _, _, _ = C_MythicPlus.GetWeeklyChestRewardLevel()
     self.db.global.weeklyBest[currChar] = best
     return best
 
