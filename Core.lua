@@ -32,6 +32,7 @@ local mktracker
     [14] = quaking
     [15] = relentless
     [16] = infested
+    [117] = reaping
 ]]
 
 local blizzAffixIDs = {
@@ -51,6 +52,7 @@ local blizzAffixIDs = {
     [14] = "spell_nature_earthquake",
     [15] = "inv_chest_plate04",
     [16] = "achievement_nazmir_boss_ghuun",
+    [117] = "ability_racial_embraceoftheloa_bwonsomdi",
 }
 
 local defaults = {
@@ -771,7 +773,7 @@ function MythicKeystoneTracker:ClassifyAffixLevels(affixID)
             affLevel[3] = affixID[i]
         end
 
-        if affixID[i] == 15 or affixID[i] == 16 then
+        if affixID[i] == 15 or affixID[i] == 16 or affixID[i] == 117 then
             affLevel[4] = affixID[i]
         end
     end
