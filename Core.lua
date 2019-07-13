@@ -33,6 +33,7 @@ local mktracker
     [15] = relentless
     [16] = infested
     [117] = reaping
+    [119] = beguiling
 ]]
 
 local blizzAffixIDs = {
@@ -53,6 +54,7 @@ local blizzAffixIDs = {
     [15] = "inv_chest_plate04",
     [16] = "achievement_nazmir_boss_ghuun",
     [117] = "ability_racial_embraceoftheloa_bwonsomdi",
+    [119] = "achievement_boss_azshara",
 }
 
 local defaults = {
@@ -773,7 +775,7 @@ function MythicKeystoneTracker:ClassifyAffixLevels(affixID)
             affLevel[3] = affixID[i]
         end
 
-        if affixID[i] == 15 or affixID[i] == 16 or affixID[i] == 117 then
+        if affixID[i] == 15 or affixID[i] == 16 or affixID[i] == 117 or affixID[i] == 119 then
             affLevel[4] = affixID[i]
         end
     end
