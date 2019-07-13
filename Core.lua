@@ -54,8 +54,25 @@ local blizzAffixIDs = {
     [15] = "inv_chest_plate04",
     [16] = "achievement_nazmir_boss_ghuun",
     [117] = "ability_racial_embraceoftheloa_bwonsomdi",
-    [119] = "achievement_boss_azshara",
+    [119] = "spell_shadow_mindshear",
 }
+
+local classesList = 
+{
+    [1] = "Warrior",
+    [2] = "Paladin",
+    [3] = "Demon Hunter",
+    [4] = "Hunter",
+    [5] = "Rogue",
+    [6] = "Priest",
+    [7] = "Death Knight",
+    [8] = "Shaman",
+    [9] = "Mage",
+    [10] = "Warlock",
+    [11] = "Monk",
+    [12] = "Druid",
+}
+
 
 local defaults = {
     global = {
@@ -66,7 +83,8 @@ local defaults = {
         weeklyBest = {},
         ldbStorage = {
             hide = false,
-            showUI = false
+            showUI = false,
+            toggleClass = true
 		}
     }
 }
@@ -189,6 +207,12 @@ function MythicKeystoneTracker:MiniMapButton()
         icon:Show("MythicKeystoneTrackerIcon")
     end
 end
+
+function MythicKeystoneTracker:ShowCharacterClass()
+    self.db.global.ldbStorage.toggleClass = not self.db.global.ldbStorage.toggleClass
+    --self:RefreshingTable()
+end
+
 
 --[[
     Window/UI Creation
@@ -394,45 +418,93 @@ function MythicKeystoneTracker:UIBringUp()
     end
     mktracker:AddChild(openBagBtn)
 
+
+
     -- create table 
     local ScrollingTable = LibStub("ScrollingTable");
-    local cols = {
-        {
-            ['name'] = 'Character',
-            ['width'] = 90,
-            ['align'] = 'LEFT',
-        },
-       
-        {
-            ['name'] = 'Realm',
-            ['width'] = 140,
-            ['align'] = 'MIDDLE',
-        },
+    local cols = {}
+    if not self.db.global.ldbStorage.toggleClass then
+        cols = {
+            {
+                ['name'] = 'Character',
+                ['width'] = 90,
+                ['align'] = 'LEFT',
+            },
+            --- class
+            {
+                ['name'] = 'Class',
+                ['width'] = 90,
+                ['align'] = 'MIDDLE',
+            },
+           
+            {
+                ['name'] = 'Realm',
+                ['width'] = 140,
+                ['align'] = 'MIDDLE',
+            },
+    
+            {
+                ['name'] = 'Item Level',
+                ['width'] = 70,
+                ['align'] = 'MIDDLE',
+            },
+    
+            {
+                ['name'] = 'Weekly Best',
+                ['width'] = 95,
+                ['align'] = 'MIDDLE',
+            },
+    
+            {
+                ['name'] = 'Dungeon',
+                ['width'] = 165,
+                ['align'] = 'MIDDLE',
+            },
+    
+            {
+                ['name'] = 'Level',
+                ['width'] = 35,
+                ['align'] = 'MIDDLE',
+            },
+        }
+    else
+        cols = {
+            {
+                ['name'] = 'Character',
+                ['width'] = 90,
+                ['align'] = 'LEFT',
+            },
+            {
+                ['name'] = 'Realm',
+                ['width'] = 140,
+                ['align'] = 'MIDDLE',
+            },
 
-        {
-            ['name'] = 'Item Level',
-            ['width'] = 70,
-            ['align'] = 'MIDDLE',
-        },
+            {
+                ['name'] = 'Item Level',
+                ['width'] = 70,
+                ['align'] = 'MIDDLE',
+            },
 
-        {
-            ['name'] = 'Weekly Best',
-            ['width'] = 95,
-            ['align'] = 'MIDDLE',
-        },
+            {
+                ['name'] = 'Weekly Best',
+                ['width'] = 95,
+                ['align'] = 'MIDDLE',
+            },
 
-        {
-            ['name'] = 'Dungeon',
-            ['width'] = 165,
-            ['align'] = 'MIDDLE',
-        },
+            {
+                ['name'] = 'Dungeon',
+                ['width'] = 165,
+                ['align'] = 'MIDDLE',
+            },
 
-        {
-            ['name'] = 'Level',
-            ['width'] = 35,
-            ['align'] = 'MIDDLE',
-        },
-    }
+            {
+                ['name'] = 'Level',
+                ['width'] = 35,
+                ['align'] = 'MIDDLE',
+            },
+        }
+    end
     self.TestTable = ScrollingTable:CreateST(cols, 16, 20, nil)
 
     local tableWrapper = AceGUI:Create('lib-st'):WrapST(self.TestTable)
@@ -488,6 +560,22 @@ function MythicKeystoneTracker:UIBringUp()
         self:MiniMapButton()
     end)
     mktracker:AddChild(MiniMapToggleBox)
+
+    -- ClassToggle show toggle
+    ClassToggleBox = AceGUI:Create('CheckBox')
+    ClassToggleBox:SetWidth(200)
+    ClassToggleBox:SetLabel('Show Class')
+    ClassToggleBox:SetValue(not self.db.global.ldbStorage.toggleClass)
+    ClassToggleBox:SetCallback("OnValueChanged", function()
+        self.db.global.ldbStorage.toggleClass = ClassToggleBox:GetValue()
+        self:ShowCharacterClass()
+        mktracker:ReleaseChildren()
+        mktracker:Release()
+        self.db.global.ldbStorage.showUI = false
+        self:UIBringUp()
+        self.db.global.ldbStorage.showUI = true
+    end)
+    mktracker:AddChild(ClassToggleBox)
     
     -- element hard placement in the UI window
     if affixAcquired then
@@ -525,6 +613,8 @@ function MythicKeystoneTracker:UIBringUp()
     sendBtn:SetPoint('BOTTOMLEFT', mktracker.frame, 370, 22)
     MiniMapToggleBox:ClearAllPoints()
     MiniMapToggleBox:SetPoint('BOTTOMRIGHT', mktracker.frame, -90, 22)
+    ClassToggleBox:ClearAllPoints()
+    ClassToggleBox:SetPoint('BOTTOMRIGHT', mktracker.frame, -90, 44)
     closeBtn:ClearAllPoints()
     closeBtn:SetPoint('BOTTOMRIGHT', mktracker.frame, -30, 22)
 
@@ -643,29 +733,56 @@ function MythicKeystoneTracker:UpdateTable(table)
             local info = self:ParseKey(keystone[1])
             local weekly = self.db.global.weeklyBest[char]
             local factionExtract = self:CharPortionGrab(char, 3)
-            local classExtract = self:CharPortionGrab(char, 4)    
+            local classExtract = self:CharPortionGrab(char, 4)
+            local showClass = self.db.global.ldbStorage.toggleClass
             local na = "-"        
             local ilvl = self.db.global.currIlvl[char]
+            local classColoring, classIcon = self:ColorizeMe(classExtract, self:CharPortionGrab(char, 1))
+
             ilvl = math.floor(ilvl)
             
-            if info then
-                tinsert(tableData, {
-                    self:ColorizeMe(classExtract, self:CharPortionGrab(char, 1)),
-                    self:ColorizeMe(factionExtract, self:CharPortionGrab(char, 2)),
-                    ilvl,
-                    weekly,
-                    info.dungeonName,
-                    info.level
-                })
+            if not self.db.global.ldbStorage.toggleClass then
+                if info then
+                    tinsert(tableData, {
+                        self:ColorizeMe(classExtract, self:CharPortionGrab(char, 1)),
+                        self:ColorizeMe(classExtract, classExtract),
+                        self:ColorizeMe(factionExtract, self:CharPortionGrab(char, 2)),
+                        ilvl,
+                        weekly,
+                        info.dungeonName,
+                        info.level
+                    })
+                else
+                    tinsert(tableData, {
+                        self:ColorizeMe(classExtract, self:CharPortionGrab(char, 1)),
+                        self:ColorizeMe(classExtract, classExtract),
+                        self:ColorizeMe(factionExtract, self:CharPortionGrab(char, 2)),
+                        ilvl,
+                        weekly,
+                        na,
+                        na
+                    })
+                end
             else
-                tinsert(tableData, {
-                    self:ColorizeMe(classExtract, self:CharPortionGrab(char, 1)),
-                    self:ColorizeMe(factionExtract, self:CharPortionGrab(char, 2)),
-                    ilvl,
-                    weekly,
-                    na,
-                    na
-                })
+                if info then
+                    tinsert(tableData, {
+                        self:ColorizeMe(classExtract, self:CharPortionGrab(char, 1)),
+                        self:ColorizeMe(factionExtract, self:CharPortionGrab(char, 2)),
+                        ilvl,
+                        weekly,
+                        info.dungeonName,
+                        info.level
+                    })
+                else
+                    tinsert(tableData, {
+                        self:ColorizeMe(classExtract, self:CharPortionGrab(char, 1)),
+                        self:ColorizeMe(factionExtract, self:CharPortionGrab(char, 2)),
+                        ilvl,
+                        weekly,
+                        na,
+                        na
+                    })
+                end
             end
         end
         table:SetData(tableData, true);
@@ -673,35 +790,35 @@ function MythicKeystoneTracker:UpdateTable(table)
 end
 
 -- color text for faction and class
-function MythicKeystoneTracker:ColorizeMe(faction, stringToColor)
-    if string.find(faction, "Warrior") then
+function MythicKeystoneTracker:ColorizeMe(type, stringToColor)
+    if string.find(type, classesList[1]) then
         return "|CFFC79C6E " .. stringToColor .. " |r" -- Warrior colors
-    elseif string.find(faction, "Paladin") then
+    elseif string.find(type, classesList[2]) then
         return "|CFFF58CBA " .. stringToColor .. " |r" -- Paladin colors
-    elseif string.find(faction, "Demon Hunter") then
+    elseif string.find(type, classesList[3]) then
         return "|CFFA330C9 " .. stringToColor .. " |r" -- Demon Hunter colors
-    elseif string.find(faction, "Hunter") then
+    elseif string.find(type, classesList[4]) then
         return "|CFFABD473 " .. stringToColor .. " |r" -- Hunter colors
-    elseif string.find(faction, "Rogue") then
+    elseif string.find(type, classesList[5]) then
         return "|CFFFFF569 " .. stringToColor .. " |r" -- Rogue colors
-    elseif string.find(faction, "Priest") then
+    elseif string.find(type, classesList[6]) then
         return "|CFFFFFFFF " .. stringToColor .. " |r" -- Priest colors
-    elseif string.find(faction, "Death Knight") then
+    elseif string.find(type, classesList[7]) then
         return "|CFFC41F3B " .. stringToColor .. " |r" -- Death Knight colors
-    elseif string.find(faction, "Shaman") then
+    elseif string.find(type, classesList[8]) then
         return "|CFF0070DE " .. stringToColor .. " |r" -- Shaman colors
-    elseif string.find(faction, "Mage") then
+    elseif string.find(type, classesList[9]) then
         return "|CFF69CCF0 " .. stringToColor .. " |r" -- Mage colors
-    elseif string.find(faction, "Warlock") then
+    elseif string.find(type, classesList[10]) then
         return "|CFF9482C9 " .. stringToColor .. " |r" -- Warlock colors
-    elseif string.find(faction, "Monk") then
+    elseif string.find(type, classesList[11]) then
         return "|CFF00FF96 " .. stringToColor .. " |r" -- Monk colors
-    elseif string.find(faction, "Druid") then
+    elseif string.find(type, classesList[12]) then
         return "|CFFFF7D0A " .. stringToColor .. " |r" -- Druid colors
 
-    elseif string.find(faction, "Horde") then
+    elseif string.find(type, "Horde") then
         return "|CFFFF0000 " .. stringToColor .. " (H) |r" -- horde colors
-    elseif string.find(faction, "Alliance") then      
+    elseif string.find(type, "Alliance") then      
         return "|CFF00CCFF " .. stringToColor .. " (A) |r" -- alliance colors
 
     else 
