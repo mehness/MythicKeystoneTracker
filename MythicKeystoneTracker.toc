@@ -1,4 +1,4 @@
-## Interface: 80000
+## Interface: 80300
 ## Title: MythicKeystoneTracker
 ## Notes: Lets players track Mythic Keystones and Mythic Plus progress for all of their characters.
 ## Author: Mehtaknight - Aggramar (US)

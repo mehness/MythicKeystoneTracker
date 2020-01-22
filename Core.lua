@@ -34,6 +34,7 @@ local mktracker
     [16] = infested
     [117] = reaping
     [119] = beguiling
+    [120] = awakened
 ]]
 
 local blizzAffixIDs = {
@@ -55,6 +56,7 @@ local blizzAffixIDs = {
     [16] = "achievement_nazmir_boss_ghuun",
     [117] = "ability_racial_embraceoftheloa_bwonsomdi",
     [119] = "spell_shadow_mindshear",
+    [120] = "trade_archaeology_nerubian_obelisk"
 }
 
 local classesList = 
@@ -892,7 +894,7 @@ function MythicKeystoneTracker:ClassifyAffixLevels(affixID)
             affLevel[3] = affixID[i]
         end
 
-        if affixID[i] == 15 or affixID[i] == 16 or affixID[i] == 117 or affixID[i] == 119 then
+        if affixID[i] == 15 or affixID[i] == 16 or affixID[i] == 117 or affixID[i] == 119 or affixID[i] == 120 then
             affLevel[4] = affixID[i]
         end
     end
