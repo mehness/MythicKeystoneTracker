@@ -35,6 +35,10 @@ local mktracker
     [117] = reaping
     [119] = beguiling
     [120] = awakened
+    [122] = inspiring
+    [123] = spiteful
+    [124] = storming
+    [121] = prideful
 ]]
 
 local blizzAffixIDs = {
@@ -56,7 +60,11 @@ local blizzAffixIDs = {
     [16] = "achievement_nazmir_boss_ghuun",
     [117] = "ability_racial_embraceoftheloa_bwonsomdi",
     [119] = "spell_shadow_mindshear",
-    [120] = "trade_archaeology_nerubian_obelisk"
+    [120] = "trade_archaeology_nerubian_obelisk",
+    [121] = "spell_animarevendreth_buff",
+    [122] = "spell_holy_prayerofspirit",
+    [123] = "spell_holy_prayerofshadowprotection",
+    [124] = "spell_nature_cyclone"
 }
 
 local classesList = 
@@ -83,6 +91,9 @@ local defaults = {
         faction = {},
         class = {},
         weeklyBest = {},
+        --rewardLevel = {},
+        rewardAvail = {},
+        --rewardClaimed = {},
         ldbStorage = {
             hide = false,
             showUI = false,
@@ -156,6 +167,7 @@ function MythicKeystoneTracker:OnEnable()
     self:RegisterEvent("PLAYER_ENTERING_WORLD")
     self:RegisterEvent("UNIT_INVENTORY_CHANGED")
     self:RegisterEvent("CHALLENGE_MODE_KEYSTONE_RECEPTABLE_OPEN")
+    self:RegisterEvent("MYTHIC_PLUS_NEW_WEEKLY_RECORD")
 end
 
 function MythicKeystoneTracker:OnDisable()
@@ -199,6 +211,13 @@ function MythicKeystoneTracker:PLAYER_LOGIN()
     C_MythicPlus.RequestMapInfo()
     C_MythicPlus.RequestRewards()
     C_MythicPlus.RequestCurrentAffixes()
+end
+
+function MythicKeystoneTracker:MYTHIC_PLUS_NEW_WEEKLY_RECORD()
+    self:WeeklyBest()
+    --local _, _, level = C_MythicPlus.MythicPlusNewWeeklyRecord()
+    --self.db.global.weeklyBest[self:NameAndRealmAndFaction()] = level
+    self:RefreshingTable()
 end
 
 function MythicKeystoneTracker:MiniMapButton()
@@ -264,7 +283,7 @@ function MythicKeystoneTracker:UIBringUp()
         availReward:SetWidth(45)
         availReward:SetCallback("OnEnter", function()
             GameTooltip:SetOwner(UIParent, "ANCHOR_CURSOR")
-            GameTooltip:AddLine("Your weekly Grand Challenger's Bounty is available!")
+            GameTooltip:AddLine("Your weekly Grand Vault is available!")
             GameTooltip:Show()
         end)
         availReward:SetCallback("OnLeave", function()
@@ -429,7 +448,7 @@ function MythicKeystoneTracker:UIBringUp()
         cols = {
             {
                 ['name'] = 'Character',
-                ['width'] = 90,
+                ['width'] = 120,
                 ['align'] = 'LEFT',
             },
             --- class
@@ -445,27 +464,39 @@ function MythicKeystoneTracker:UIBringUp()
                 ['align'] = 'MIDDLE',
             },
     
-            {
+            --[[{
                 ['name'] = 'Item Level',
                 ['width'] = 70,
                 ['align'] = 'MIDDLE',
-            },
+            },]]
     
             {
                 ['name'] = 'Weekly Best',
                 ['width'] = 95,
                 ['align'] = 'MIDDLE',
             },
-    
+
             {
                 ['name'] = 'Dungeon',
-                ['width'] = 165,
+                ['width'] = 105,
                 ['align'] = 'MIDDLE',
             },
     
             {
                 ['name'] = 'Level',
-                ['width'] = 35,
+                ['width'] = 60,
+                ['align'] = 'MIDDLE',
+            },   
+            --[[
+            {
+                ['name'] = 'Reward Level',
+                ['width'] = 60,
+                ['align'] = 'MIDDLE',
+            },
+            ]]
+            {
+                ['name'] = 'Reward Available',
+                ['width'] = 60,
                 ['align'] = 'MIDDLE',
             },
         }
@@ -473,7 +504,7 @@ function MythicKeystoneTracker:UIBringUp()
         cols = {
             {
                 ['name'] = 'Character',
-                ['width'] = 90,
+                ['width'] = 120,
                 ['align'] = 'LEFT',
             },
             {
@@ -482,31 +513,45 @@ function MythicKeystoneTracker:UIBringUp()
                 ['align'] = 'MIDDLE',
             },
 
-            {
+            --[[{
                 ['name'] = 'Item Level',
                 ['width'] = 70,
                 ['align'] = 'MIDDLE',
             },
+            ]]
 
             {
                 ['name'] = 'Weekly Best',
-                ['width'] = 95,
+                ['width'] = 60,
                 ['align'] = 'MIDDLE',
             },
 
             {
                 ['name'] = 'Dungeon',
-                ['width'] = 165,
+                ['width'] = 105,
                 ['align'] = 'MIDDLE',
             },
 
             {
                 ['name'] = 'Level',
-                ['width'] = 35,
+                ['width'] = 60,
+                ['align'] = 'MIDDLE',
+            },
+            --[[
+            {
+                ['name'] = 'Reward Level',
+                ['width'] = 60,
+                ['align'] = 'MIDDLE',
+            },
+            ]]
+            {
+                ['name'] = 'Reward Available',
+                ['width'] = 60,
                 ['align'] = 'MIDDLE',
             },
         }
     end
+    
     self.TestTable = ScrollingTable:CreateST(cols, 16, 20, nil)
 
     local tableWrapper = AceGUI:Create('lib-st'):WrapST(self.TestTable)
@@ -626,6 +671,7 @@ end
 function MythicKeystoneTracker:FindCurrentKeystone()
     local itemID = 138019
     local BFAkey = 158923
+    local SLKey = 180653
     local exists = false
     local currChar = self:NameAndRealmAndFaction()
 
@@ -637,10 +683,10 @@ function MythicKeystoneTracker:FindCurrentKeystone()
         return nil
     end
 
-    if self:GetCharacterLevel() == 120 then
+    if self:GetCharacterLevel() == GetMaxLevelForPlayerExpansion() then
         for bag = 0, NUM_BAG_SLOTS do
             for slot = 0, GetContainerNumSlots(bag) do
-                if(GetContainerItemID(bag, slot) == itemID or GetContainerItemID(bag, slot) == BFAkey) then                    
+                if(GetContainerItemID(bag, slot) == itemID or GetContainerItemID(bag, slot) == SLKey) then                    
                     bagID = bag
                     slotNum = slot
                     local itemLink = GetContainerItemLink(bag, slot)
@@ -691,17 +737,46 @@ function MythicKeystoneTracker:WeeklyBest() --compare query to stored value
 	if not self.db.global.weeklyBest then
 		self.db.global.weeklyBest = {}
     end
-    
-    -- grab weekday and record for reset and date of weekly best in order to maintain continuity
-    -- print(date("%m/%d/%y %H:%M:%S"))
-    -- print(date("*t").wday)
-    
+
     local currChar = self:NameAndRealmAndFaction()
     local best = 0
+    local reward = 0
+ 
+    if reward < 0 then
+        reward = 0
+    end
 
-    local best, _, _, _ = C_MythicPlus.GetWeeklyChestRewardLevel()
+    local runs = C_MythicPlus.GetRunHistory(false, false)
+    local runMax = {}
+    for k, v in pairs(runs) do
+        local wb = runs[k].level
+        tinsert(runMax, wb)
+
+    end
+    
+    -- gets weekly best
+    if table.getn(runMax) > 0 then
+        best = math.max(unpack(runMax))
+    end
+        --[[
+        if table.getn(runMax) < 4 then
+            reward = math.min(unpack(runMax))
+        else
+            table.sort(runMax)
+            local agg = {}
+            for i = 1, 4 do
+                table.insert(agg, runMax[i])
+            end
+            reward = math.min(unpack(agg))
+        end
+    
+    end
+    local rewardIlvl = self:GetRewardLevel(reward)
+
+    self.db.global.rewardLevel[currChar] = rewardIlvl
+    ]]
     self.db.global.weeklyBest[currChar] = best
-    return best
+    return best --, reward
 
 end
 
@@ -734,55 +809,65 @@ function MythicKeystoneTracker:UpdateTable(table)
         for char, keystone in pairs(self.db.global.currKeystone) do
             local info = self:ParseKey(keystone[1])
             local weekly = self.db.global.weeklyBest[char]
+            --local reward = self.db.global.rewardLevel[char]
+            local availableReward =  self:IsRewardAvailableAlts(char)
+            local charName = self:CharPortionGrab(char, 1)
             local factionExtract = self:CharPortionGrab(char, 3)
             local classExtract = self:CharPortionGrab(char, 4)
             local showClass = self.db.global.ldbStorage.toggleClass
             local na = "-"        
             local ilvl = self.db.global.currIlvl[char]
             local classColoring, classIcon = self:ColorizeMe(classExtract, self:CharPortionGrab(char, 1))
-
+            --print(availableReward)
             ilvl = math.floor(ilvl)
             
             if not self.db.global.ldbStorage.toggleClass then
                 if info then
                     tinsert(tableData, {
-                        self:ColorizeMe(classExtract, self:CharPortionGrab(char, 1)),
+                        self:ColorizeMe(classExtract, charName .. " (" .. ilvl .. ")"),
                         self:ColorizeMe(classExtract, classExtract),
                         self:ColorizeMe(factionExtract, self:CharPortionGrab(char, 2)),
-                        ilvl,
+                        --ilvl,
                         weekly,
                         info.dungeonName,
-                        info.level
+                        info.level,
+                        --reward,
+                        availableReward
                     })
                 else
                     tinsert(tableData, {
-                        self:ColorizeMe(classExtract, self:CharPortionGrab(char, 1)),
+                        self:ColorizeMe(classExtract, charName .. " (" .. ilvl .. ")"),
                         self:ColorizeMe(classExtract, classExtract),
                         self:ColorizeMe(factionExtract, self:CharPortionGrab(char, 2)),
-                        ilvl,
+                        --ilvl,
                         weekly,
                         na,
-                        na
+                        na,
+                        --reward,
+                        availableReward
                     })
                 end
             else
                 if info then
                     tinsert(tableData, {
-                        self:ColorizeMe(classExtract, self:CharPortionGrab(char, 1)),
+                        self:ColorizeMe(classExtract, charName .. " (" .. ilvl .. ")"),
                         self:ColorizeMe(factionExtract, self:CharPortionGrab(char, 2)),
-                        ilvl,
+                        --ilvl,
                         weekly,
                         info.dungeonName,
-                        info.level
+                        info.level,
+                        --reward,
+                        availableReward
                     })
                 else
                     tinsert(tableData, {
-                        self:ColorizeMe(classExtract, self:CharPortionGrab(char, 1)),
+                        self:ColorizeMe(classExtract, charName .. " (" .. ilvl .. ")"),
                         self:ColorizeMe(factionExtract, self:CharPortionGrab(char, 2)),
-                        ilvl,
-                        weekly,
+                        weekly,                        
                         na,
-                        na
+                        na,
+                        --reward,
+                        availableReward
                     })
                 end
             end
@@ -886,15 +971,15 @@ function MythicKeystoneTracker:ClassifyAffixLevels(affixID)
             affLevel[1] = affixID[i]
         end
 
-        if affixID[i] == 5 or affixID[i] == 6 or affixID[i] == 7 or affixID[i] == 8 or affixID[i] == 11 then
+        if affixID[i] == 5 or affixID[i] == 6 or affixID[i] == 7 or affixID[i] == 8 or affixID[i] == 11  or affixID[i] == 122 or affixID[i] == 123 then
             affLevel[2] = affixID[i]
         end
 
-        if affixID[i] == 2 or affixID[i] == 3 or affixID[i] == 4 or affixID[i] == 12 or affixID[i] == 13 or affixID[i] == 14 then
+        if affixID[i] == 2 or affixID[i] == 3 or affixID[i] == 4 or affixID[i] == 12 or affixID[i] == 13 or affixID[i] == 14 or affixID[i] == 124 then
             affLevel[3] = affixID[i]
         end
 
-        if affixID[i] == 15 or affixID[i] == 16 or affixID[i] == 117 or affixID[i] == 119 or affixID[i] == 120 then
+        if affixID[i] == 15 or affixID[i] == 16 or affixID[i] == 117 or affixID[i] == 119 or affixID[i] == 120 or affixID[i] == 121 then
             affLevel[4] = affixID[i]
         end
     end
@@ -1020,6 +1105,22 @@ end
 
 function MythicKeystoneTracker:GetWeeklyRewardAvailability()
     return C_MythicPlus.IsWeeklyRewardAvailable()
+end
+
+function MythicKeystoneTracker:IsRewardAvailableAlts(alt)
+    if self:GetWeeklyRewardAvailability() then
+        if self.db.global.weeklyBest[alt] > 0 then
+            self.db.global.rewardAvail[alt] = "|CFF00FF00 Yes |r"
+        end
+    end
+    if not self:GetWeeklyRewardAvailability() then
+        self.db.global.rewardAvail[self:NameAndRealmAndFaction()] = "|CFFFF0000 No |r"
+    end
+    return self.db.global.rewardAvail[alt]
+end
+
+function MythicKeystoneTracker:GetRewardLevel(level)
+    return C_MythicPlus.GetRewardLevelFromKeystoneLevel(level)
 end
 
 function MythicKeystoneTracker:TableEntryCount(table)
