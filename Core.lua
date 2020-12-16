@@ -484,9 +484,10 @@ function MythicKeystoneTracker:UIBringUp()
     
             {
                 ['name'] = 'Level',
-                ['width'] = 60,
+                ['width'] = 35,
                 ['align'] = 'MIDDLE',
             },   
+
             --[[
             {
                 ['name'] = 'Reward Level',
@@ -534,9 +535,10 @@ function MythicKeystoneTracker:UIBringUp()
 
             {
                 ['name'] = 'Level',
-                ['width'] = 60,
+                ['width'] = 35,
                 ['align'] = 'MIDDLE',
             },
+
             --[[
             {
                 ['name'] = 'Reward Level',
@@ -748,35 +750,36 @@ function MythicKeystoneTracker:WeeklyBest() --compare query to stored value
 
     local runs = C_MythicPlus.GetRunHistory(false, false)
     local runMax = {}
+
     for k, v in pairs(runs) do
         local wb = runs[k].level
+        print(wb)
         tinsert(runMax, wb)
-
     end
     
     -- gets weekly best
-    if table.getn(runMax) > 0 then
+    if next(runMax) then
         best = math.max(unpack(runMax))
     end
-        --[[
-        if table.getn(runMax) < 4 then
-            reward = math.min(unpack(runMax))
-        else
-            table.sort(runMax)
-            local agg = {}
-            for i = 1, 4 do
-                table.insert(agg, runMax[i])
-            end
-            reward = math.min(unpack(agg))
-        end
-    
-    end
-    local rewardIlvl = self:GetRewardLevel(reward)
 
+    --[[
+    if table.getn(runMax) < 4 then
+        reward = math.min(unpack(runMax))
+    else
+        table.sort(runMax)
+        local agg = {}
+        for i = 1, 4 do
+            table.insert(agg, runMax[i])
+        end
+        reward = math.min(unpack(agg))
+    end
+
+    local rewardIlvl = self:GetRewardLevel(reward)
+    
     self.db.global.rewardLevel[currChar] = rewardIlvl
     ]]
     self.db.global.weeklyBest[currChar] = best
-    return best --, reward
+    return best, reward
 
 end
 
@@ -1117,6 +1120,7 @@ function MythicKeystoneTracker:IsRewardAvailableAlts(alt)
         self.db.global.rewardAvail[self:NameAndRealmAndFaction()] = "|CFFFF0000 No |r"
     end
     return self.db.global.rewardAvail[alt]
+
 end
 
 function MythicKeystoneTracker:GetRewardLevel(level)
