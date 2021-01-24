@@ -15,6 +15,8 @@ local affixDescs = {}
 local daisUp = false
 local mktracker
 
+local vaultShowing = 0
+
 --[[
     [1] = overflowing
     [2] = skittish
@@ -229,6 +231,13 @@ function MythicKeystoneTracker:MiniMapButton()
     end
 end
 
+-- bring up the rewards vault window
+function MythicKeystoneTracker:ShowVaultWindow()
+        LoadAddOn("Blizzard_WeeklyRewards")
+        WeeklyRewardsFrame:Show()
+        WeeklyRewardsFrame:SetFrameStrata("FULLSCREEN_DIALOG")
+end
+
 function MythicKeystoneTracker:ShowCharacterClass()
     self.db.global.ldbStorage.toggleClass = not self.db.global.ldbStorage.toggleClass
     --self:RefreshingTable()
@@ -242,7 +251,7 @@ function MythicKeystoneTracker:UIBringUp()
     -- Create UI children
     local charLabel, availReward
     local affixOne, affixTwo, affixThree, seasonAffix
-    local currKeyLabel, clearBtn, refreshBtn, openBagBtn, reportDd, whisperTarget, sendBtn, closeBtn, MiniMapToggleBox
+    local currKeyLabel, clearBtn, refreshBtn, vaultBtn, openBagBtn, reportDd, whisperTarget, sendBtn, closeBtn, MiniMapToggleBox
     
     local affixAcquired = false
     local currKeyInfo = "No Key"
@@ -405,6 +414,24 @@ function MythicKeystoneTracker:UIBringUp()
         GameTooltip:Hide()
     end)
     mktracker:AddChild(refreshBtn)
+
+    -- table refresh button
+    vaultBtn = AceGUI:Create('Button')
+    vaultBtn:SetWidth(150)
+    vaultBtn:SetText('Show Vault')
+    vaultBtn:SetCallback('OnClick', function()
+        self:ShowVaultWindow()
+    end)
+    vaultBtn:SetCallback("OnEnter", function()
+        GameTooltip:SetOwner(UIParent, "ANCHOR_CURSOR")
+        GameTooltip:AddLine("Shows The Great Challenger's Vault Rewards window.")
+        GameTooltip:Show()
+    end)
+    vaultBtn:SetCallback("OnLeave", function()
+        SetItemSearch("")
+        GameTooltip:Hide()
+    end)
+    mktracker:AddChild(vaultBtn)
 
     -- keystone locate in bag button
     openBagBtn = AceGUI:Create('Icon')
@@ -647,6 +674,8 @@ function MythicKeystoneTracker:UIBringUp()
     clearBtn:SetPoint('BOTTOMRIGHT', mktracker.frame, -30, 75)
     refreshBtn:ClearAllPoints()
     refreshBtn:SetPoint('BOTTOMRIGHT', mktracker.frame, -190, 75)
+    vaultBtn:ClearAllPoints()
+    vaultBtn:SetPoint('BOTTOMRIGHT', mktracker.frame, -30, 100)
     availReward:ClearAllPoints()
     availReward:SetPoint('TOPLEFT', mktracker.frame, 70, -40)
     openBagBtn:ClearAllPoints()
@@ -748,12 +777,12 @@ function MythicKeystoneTracker:WeeklyBest() --compare query to stored value
         reward = 0
     end
 
-    local runs = C_MythicPlus.GetRunHistory(false, false)
+    local runs = C_MythicPlus.GetRunHistory(false, true)
     local runMax = {}
 
     for k, v in pairs(runs) do
         local wb = runs[k].level
-        print(wb)
+        --print(wb)
         tinsert(runMax, wb)
     end
     
@@ -1132,5 +1161,5 @@ function MythicKeystoneTracker:TableEntryCount(table)
     for _ in pairs(table) do 
         count = count + 1
     end
-    print(count)
+    --print(count)
 end
